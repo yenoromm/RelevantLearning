@@ -1,1 +1,205 @@
 https://geekflare.com/nginx-webserver-security-hardening-guide/
+
+
+
+
+
+
+ Nginx Web Server Security and Hardening Guide
+avatar_user_2_1601115874-96x96
+By Chandan Kumar on May 8, 2020
+Posted in
+
+    Nginx
+    Security
+
+Geekflare is supported by our audience. We may earn affiliate commissions from buying links on this site.
+
+Nginx security best practices.
+
+Nginx is the fastest growing web server in the industry, and currently, it holds number two position in market share.
+
+It was initially released in 2004, and since then it has earned an excellent reputation and used in top million busiest sites.
+
+nginx-market-share-1
+
+There is a reason for that – Nginx is blazing fast.
+
+In this article, I will talk about some of the essential guides to secure the Nginx for a production environment. So let’s get it started.
+SSL/TLS
+Implement SSL Certificate
+
+The first step in web security is to have SSL implemented so you can access web applications with https and add a layer of encryption in communication.
+
+    Use OpenSSL to generate CSR with 2048 bit and sha-2
+
+openssl req -nodes -new -sha256 -newkey rsa:2048 -keyout bestflare.key -out bestflare.csr
+
+    The above command will generate CSR and key files at current working directly. Don’t forget to change the .csr and .key file name.
+
+Get the CSR signed by a certificate authority and once you have the signed certificate, you can implement them in Nginx as below.
+
+    Login to Nginx server
+    Go to the conf folder where you have a ssl.conf file.
+
+Note: In default installation on Linux, you will have this file under /etc/nginx/conf.d.
+
+    Edit the file and add the following, which will enable Nginx to listen on 443 port
+
+server {
+listen       443 ssl;
+   server_name bestflare.com;
+   ssl                 on;
+   ssl_certificate     /opt/cert/bestflare.pem;
+   ssl_certificate_key /opt/cert/bestflare.key;
+   }
+
+Note: don’t forget to change the certificate and key file path.
+
+    Save the configuration and restart the Nginx. An SSL cert is implemented successfully.
+
+bestflare-ssl-cert
+SSL/TLS Optimization
+
+Having SSL doesn’t mean it’s fully secure and that’s where as a Web Security expert, you need to apply a configuration to secure the webserver.
+
+To start with, I would recommend running an SSL scan against the website to find the score and essential vulnerability.
+
+ssl-labs-rating-c
+
+So the current SSL Labs rating is “C” and a target is to make it “A.”
+Disable weak SSL/TLS protocols
+
+SSL 3, TLS 1.0, and TLS 1.1 is vulnerable, and we will allow only a strong TLS 1.2 protocol.
+
+    Edit ssl.conf file and add below in server block
+
+ssl_protocols       TLSv1.2;
+
+    Save the ssl.conf file and restart the Nginx
+
+Disable weak cipher suites
+
+Weak cipher suites may lead to vulnerability like a logjam, and that’s why we need to allow only strong cipher.
+
+    Add the following to the server block in ssl.conf file
+
+ssl_ciphers "EECDH+ECDSA+AESGCM EECDH+aRSA+AESGCM EECDH+ECDSA+SHA384 EECDH+ECDSA+SHA256 EECDH+aRSA+SHA384 EECDH+aRSA+SHA256 EECDH+aRSA+RC4 EECDH EDH+aRSA HIGH !RC4 !aNULL !eNULL !LOW !3DES !MD5 !EXP !PSK !SRP !DSS";
+
+    Save the file and restart Nginx
+
+Install Chain Certificate
+
+Not having a chain certificate also affects the overall rating and this may show an error when browsing in a modern browser like Chrome. You need to obtain a chain certificate from authority. Mostly you will find on their website or just Google it.
+
+    Add the chain cert contents in the website certificate like below. In my example, it would be /opt/cert/bestflare.pem
+
+cert-chain
+
+    Save the file and restart the Nginx
+
+Secure Diffie-Hellman for TLS
+
+Diffie-Hellman is less secure than it was believed. One of the best practices lately added in a list is to secure Diffie-hellman. Generating unique DH GROUP and adding ssl_dhparam in ssl.conf file does this.
+
+    Generate Unique DH Group by using OpenSSL
+
+openssl dhparam -out dhparams.pem 4096
+
+    It will take few minutes and will generate a file dhparams.pem on a current working directory
+    Copy dhparams.pem to cert folder
+    Modify ssl.conf and add following in server block
+
+ssl_dhparam    /opt/cert/dhparams.pem;
+
+    Save the file and restart the Nginx
+
+That should be sufficient for SSL/TLS optimization and let’s test the URL again to see the rating.
+
+ssllabs-a-rating
+
+Woo ho! So now you can see it’s “A” rating by SSLLabs. Well done!
+
+Here is complete ssl.conf
+
+# HTTPS server configuration
+server {
+   listen       443 ssl;
+   server_name bestflare.com;
+   ssl                 on;
+   ssl_certificate     /opt/cert/bestflare.pem;
+   ssl_certificate_key /opt/cert/bestflare.key;
+   ssl_protocols       TLSv1 TLSv1.1 TLSv1.2;
+   ssl_prefer_server_ciphers   on;
+   ssl_ciphers "EECDH+ECDSA+AESGCM EECDH+aRSA+AESGCM EECDH+ECDSA+SHA384 EECDH+ECDSA+SHA256 EECDH+aRSA+SHA384 EECDH+aRSA+SHA256 EECDH+aRSA+RC4 EECDH EDH+aRSA HIGH !RC4 !aNULL !eNULL !LOW !3DES !MD5 !EXP !PSK !SRP !DSS";
+   ssl_dhparam     /opt/cert/dhparams.pem;
+}
+
+Information Leakage
+
+In default Nginx installation you will have much sensitive information revealed, which can help hackers to prepare for an attack.
+
+If you are working on a PCI compliance environment, this is considered as information leakage vulnerability and must fix the item.
+
+You have to use server_tokens off to disable the information leakage. I have explained this in my previous article. Remove Version from Server Header Banner in Nginx
+Web Application Security
+
+The default Nginx configuration is not perfect and can have many vulnerabilities that’s why we harden them to make it secure.
+Disable unwanted HTTP methods
+
+Most of the time, you need just GET, HEAD & POST HTTP request in your web application. Allowing TRACE or DELETE is risky as it can allow Cross-Site Tracking attack and potentially allow a hacker to steal the cookie information.
+
+    Modify nginx.conf and add following under server block
+
+if ($request_method !~ ^(GET|HEAD|POST)$ ) 
+{
+return 405; 
+}
+
+Save the file and restart the Nginx. This will now show 405 Not Allowed if someone is trying to use TRACE, DELETE, PUT, OPTIONS.
+
+Chandans-iMac:~ chandan$ telnet bestflare.com 80
+Trying 128.199.100.162...
+Connected to bestflare.com.
+Escape character is '^]'.
+TRACE / HTTP/1.1
+Host: testing
+HTTP/1.1 405 Not Allowed
+Server: nginx
+Date: Sat, 11 Jul 2015 06:04:34 GMT
+Content-Type: text/html
+Content-Length: 166
+Connection: close
+
+Clickjacking Attack
+
+You can inject X-FRAME-OPTIONS in HTTP Header to prevent a clickjacking attack.
+
+This is achieved by adding below in nginx.conf file
+
+add_header X-Frame-Options "SAMEORIGIN";
+
+Above header will instruct a browser to load the resources ONLY from the same origin.
+X-XSS Protection
+
+Inject HTTP Header with X-XSS protection to mitigate Cross-Site scripting attack.
+
+    Modify nginx.conf file to add the following
+
+add_header X-XSS-Protection "1; mode=block";
+
+    Save the configuration file and restart Nginx. You can use the Headers Test tool to verify after implementation.
+
+You may also be interested in implementing OWASP recommended secure headers which are explained here.
+Implement Mod Security WAF
+
+Add an additional layer of security by implementing Web Application Firewall ModSecurity with OWASP Core Rule Set.
+
+Alternatively, if you may consider using cloud-based security like SUCURI in front of the Nginx server.
+Keep Nginx up-to-date
+
+Last but not least, you need to keep your Nginx up-to-date as there are many performance enhancement, security fixes and new features are being added.
+
+I hope this helps you to keep your Nginx secure.
+
+Next, you may be interested in learning to build Nginx for high-performance from scratch.
