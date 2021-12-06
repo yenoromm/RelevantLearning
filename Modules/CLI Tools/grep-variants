@@ -1,0 +1,34 @@
+https://www.reddit.com/r/linuxadmin/comments/gow8ys/learn_to_use_grepripgrepsedawk_oneliners_with/
+
+
+
+
+Hello!
+
+Recently I published my ebook on GNU awk, which completes the trio of my books on GNU grep/sed/awk tools for cli text processing. I also included a chapter on ripgrep, because of its performance and features. You can use either of these links to get the bundle. Each book has a pdf and epub version.
+
+    https://gumroad.com/l/oneliners
+
+    https://leanpub.com/b/oneliners
+
+The books are currently free to download, to help with quarantine learning.
+
+You can view the book using these repos as well. The repo has markdown source, example/exercise files used in the book, list of changes between versions, etc.
+
+    https://github.com/learnbyexample/learn_gnugrep_ripgrep
+
+    https://github.com/learnbyexample/learn_gnused
+
+    https://github.com/learnbyexample/learn_gnuawk
+
+Edit (Aug 2020): Solutions for the exercises have been added. You can also view the books online at:
+
+    https://learnbyexample.github.io/learn_gnugrep_ripgrep/
+
+    https://learnbyexample.github.io/learn_gnused/
+
+    https://learnbyexample.github.io/learn_gnuawk/
+
+I'd highly appreciate your feedback. I've tried to present features from the basics and build it step by step with plenty of examples. But a few things end up rushed or not explained well enough. Past feedback has helped me to improve some of these, so I hope you'd contribute as well.
+
+Happy learning and stay safe :)
