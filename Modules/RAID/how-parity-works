@@ -1,0 +1,84 @@
+https://www.reddit.com/r/homelab/comments/chjrve/how_parity_works_in_raid_in_plain_english_or_how/
+
+
+
+How parity works in RAID, in plain English... Or, how you can walk up to a storage array, physically yank a drive out of it, and it'll still work.
+Tutorial
+
+It's simpler than you might think.
+
+A long time ago, there was a mathematician named Boole. Boole was a salty 1800's bad-ass. Don't believe me? Look him up. Go ahead. Dude could kick your ass Abe Lincoln-style.
+
+Anyway, when not kicking the Victorian crap out of people, Boole liked working with binary numbers. 0 and 1.
+
+He liked working with binary so much, that he came up with his own branch of mathematics, and a set of operators to go with it... Just as +, -, * and / work in decimal, AND, OR, XOR, and NOT work as operators in binary. He called these things "Boolean operators"... Because that was his name. Would be rather silly if he named it something else. :)
+
+One of Boole's operators (mentioned above) is called "OR" (as in 'this OR that'). OR will return 1 if either value on either side of the operator is 1. If neither value is 1, then the test returns 0. For example:
+
+1 OR 1 = 1 ... Since one of the numbers is 1, right?
+
+1 OR 0 = 1 ... Since at least one of them is 1, the answer is 1.
+
+0 OR 1 = 1 ... Since one or the other is still 1..
+
+0 OR 0 = 0 ... Since neither one is 1, the result is 0.
+
+Being a boss, Boole called his most impressively bad-ass operator 'XOR' (prounounced 'ex-or', short for 'exclusive OR'). Similar to OR, XOR basically means, "Return 1 if one or the other is 1, but not both.."... Which looks like this:
+
+0 XOR 0 = 0 ... Since neither one is 1.
+
+0 XOR 1 = 1 ...Since at least one of them is 1, but not both of them.
+
+1 XOR 0 = 1 ...Since at least one of them is 1, but not both of them..
+
+1 XOR 1 = 0 ...Since it fails the 'but not both' rule
+
+It turns out that XOR has an almost spooky-magical property to it. As long as you have three values, somebody can completely remove one of those values from the equation, and you can still go back in time and figure out what that value was! ...Spooky, right? So, get out a scientific calculator. I'll prove it. The one in Windows works nicely..(set it to Programmer mode in the "View" menu)
+
+Type in the following:
+
+0 XOR 1 XOR 1 =
+
+What do you get? The answer should be 0. This is your parity value. It's important, so, hang onto it.
+
+Now, randomly pick one of those three values in the equation, and pretend it has been destroyed. Died in a fire. Destroyed by monkeys. For the sake of the explanation, lets say the flaming monkeys destroy the middle value:
+
+0 XOR ??? XOR 1
+
+Believe it or not, we can actually figure out what that missing value was, by plugging in our parity value in its place, and re-running the calculation! So, lets try it..
+
+0 XOR 0 XOR 1 = ....
+
+You should get 1 as a result.. The number those damn flaming monkeys destroyed!
+
+This XOR magic trick works regardless of how many values you have in the equation:
+
+1 XOR 1 XOR 0 XOR 1 XOR 0 XOR 0 XOR 1 XOR 0 = 0, right?
+
+So, lets blow away that second value:
+
+1 XOR ??? XOR 0 XOR 1 XOR 0 XOR 0 XOR 1 XOR 0
+
+Now, plug in that parity value in its place, and re-run the calculation..
+
+1 XOR 0 XOR 0 XOR 1 XOR 0 XOR 0 XOR 1 XOR 0 = (..drum roll..) 1!
+
+Congratulations.. You just repaired an 8-spindle RAID3, where each hard drive holds one bit of information. This trick works regardless of the number of bits, and regardless of the number of values, provided there are always at least three values to work with.. So, lets upgrade our 1-bit hard drives to 1-byte capacity hard drives:
+
+10101010 XOR 11110000 XOR 10000000 = 00011010 (<--parity value)
+
+now, lets blow away the third value:
+
+10101010 XOR 11110000 XOR ????????
+
+And re-run the calculation using our parity data in place of the missing data:
+
+10101010 XOR 11110000 XOR 00011010 = (thrash guitar riff) 10000000!
+
+..And that's all there is to it.
+
+This same idea works with 10TB drives as well as it does on our pretend 1-byte hard drives. It works just as well with RAID sets with three drives as it does with thirty drives. That's the beauty of XOR, and parity.
+
+In modern RAID systems, when you pull a drive, the RAID can figure out what was on that drive based on parity data it stored before the drive was pulled. Every time a write occurs, parity needs to be recalculated and stored. Often times, this parity data is distributed across multiple drives for the sake of efficiency, but, the base concept is exactly the same. If you yank a drive, the RAID can figure out, on the fly, what data is missing, simply by doing an XOR on the data it has left, replacing the missing data with parity data. If you pop in a brand new drive, the RAID will rebuild the missing data on the new drive, bit by bit, using a metric ton of XOR calculations on the neighboring data, swapping in the parity data in place of the missing data.
+
+In RAID3, parity is stored on a dedicated drive. In RAID5, this same information is split up and distributed evenly among all of the drives. This generally makes recovery much quicker, as the parity data can be read muuuch quicker by reading it off of however-many drives at once, versus trying to pull it off of one drive. In RAID5, parity data is interleaved along with regular data. This makes your window of vulnerability much smaller, which is why enterprise environments and hobbyists alike prefer RAID5 over RAID3. RAID5 is simply a speed-optimized improvement of RAID3.
